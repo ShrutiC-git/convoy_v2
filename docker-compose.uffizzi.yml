@@ -31,7 +31,7 @@ services:
           dockerfile: ./Dockerfile
         volumes:
             - ./uffizzi:/uffizzi:ro
-        entrypoint: ["./cmd", "scheduler", "--config", "./convoy.json"]
+        entrypoint: ["./cmd", "scheduler", "--config", "./uffizzi/convoy.json"]
         deploy:
           resources:
             limits:
@@ -43,7 +43,7 @@ services:
           dockerfile: ./Dockerfile
         volumes:
             - ./uffizzi:/uffizzi:ro
-        entrypoint: ["./cmd", "worker", "--config", "./convoy.json"]
+        entrypoint: ["./cmd", "worker", "--config", "./uffizzi/convoy.json"]
         deploy:
           resources:
             limits:
