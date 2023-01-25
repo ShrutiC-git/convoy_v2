@@ -12,7 +12,9 @@ x-uffizzi:
 
 services:
     web:
-        image: "${CONVOY_IMAGE}"
+        build:
+          context: .
+          dockerfile: Dockerfile
         entrypoint: [ "/bin/sh" ]
         command: /compose/start
         volumes:
@@ -28,7 +30,7 @@ services:
         image: "${CONVOY_IMAGE}"
         volumes:
             - ./convoy.json:/convoy.json:ro
-        entrypoint: ["./cmd", "scheduler", "--config", "convoy.json"]
+        entrypoint: ["./cmd", "scheduler", "--config", "./convoy.json"]
         deploy:
           resources:
             limits:
@@ -39,7 +41,7 @@ services:
         image: "${CONVOY_IMAGE}"
         volumes:
             - ./convoy.json:/convoy.json:ro
-        entrypoint: ["./cmd", "worker", "--config", "convoy.json"]
+        entrypoint: ["./cmd", "worker", "--config", "./convoy.json"]
         deploy:
           resources:
             limits:
