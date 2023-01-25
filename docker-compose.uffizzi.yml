@@ -17,34 +17,32 @@ services:
           dockerfile: ./Dockerfile
         entrypoint: /bin/sh
         command: /compose/start
-        # volumes:
-        #     - ./convoy.json:/convoy.json:ro
+        volumes:
+            - ./uffizzi/convoy.json:/convoy.json:ro
             # - ./compose:/compose
         deploy:
           resources:
             limits:
               memory: 1000M
     
-
     scheduler:
         build:
           context: .
           dockerfile: ./Dockerfile
-        # volumes:
-        #     - ./convoy.json:/convoy.json:ro
+        volumes:
+            - ./uffizzi/convoy.json:/convoy.json:ro
         entrypoint: ["./cmd", "scheduler", "--config", "./convoy.json"]
         deploy:
           resources:
             limits:
               memory: 1000M
 
-
     worker:
         build:
           context: .
           dockerfile: ./Dockerfile
-        # volumes:
-        #     - ./convoy.json:/convoy.json:ro
+        volumes:
+            - ./uffizzi/convoy.json:/convoy.json:ro
         entrypoint: ["./cmd", "worker", "--config", "./convoy.json"]
         deploy:
           resources:
