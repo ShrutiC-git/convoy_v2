@@ -18,7 +18,7 @@ services:
         entrypoint: /bin/sh
         command: /compose/start
         volumes:
-            - ./uffizzi/convoy.json:/convoy.json:ro
+            - ./uffizzi:/uffizzi:ro
             # - ./compose:/compose
         deploy:
           resources:
@@ -30,7 +30,7 @@ services:
           context: .
           dockerfile: ./Dockerfile
         volumes:
-            - ./uffizzi/convoy.json:/convoy.json:ro
+            - ./uffizzi:/uffizzi:ro
         entrypoint: ["./cmd", "scheduler", "--config", "./convoy.json"]
         deploy:
           resources:
@@ -42,7 +42,7 @@ services:
           context: .
           dockerfile: ./Dockerfile
         volumes:
-            - ./uffizzi/convoy.json:/convoy.json:ro
+            - ./uffizzi:/uffizzi:ro
         entrypoint: ["./cmd", "worker", "--config", "./convoy.json"]
         deploy:
           resources:
