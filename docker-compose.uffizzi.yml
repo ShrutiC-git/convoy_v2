@@ -5,9 +5,9 @@ x-uffizzi:
     service: web
     port: 8080
   continuous_previews:
-      deploy_preview_when_pull_request_is_opened: true
-      delete_preview_when_pull_request_is_closed: true
-      share_to_github: true
+    deploy_preview_when_pull_request_is_opened: true
+    delete_preview_when_pull_request_is_closed: true
+    share_to_github: true
 
 
 services:
@@ -15,7 +15,7 @@ services:
         build:
           context: .
           dockerfile: ./Dockerfile
-        entrypoint: [ "/bin/sh" ]
+        entrypoint: /bin/sh
         command: /compose/start
         volumes:
             - ./convoy.json:/convoy.json:ro
@@ -27,7 +27,9 @@ services:
     
 
     scheduler:
-        image: "${CONVOY_IMAGE}"
+        build:
+          context: .
+          dockerfile: ./Dockerfile
         volumes:
             - ./convoy.json:/convoy.json:ro
         entrypoint: ["./cmd", "scheduler", "--config", "./convoy.json"]
@@ -38,7 +40,9 @@ services:
 
 
     worker:
-        image: "${CONVOY_IMAGE}"
+        build:
+          context: .
+          dockerfile: ./Dockerfile
         volumes:
             - ./convoy.json:/convoy.json:ro
         entrypoint: ["./cmd", "worker", "--config", "./convoy.json"]
