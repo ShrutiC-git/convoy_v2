@@ -1,0 +1,90 @@
+version: "3"
+
+x-uffizzi:
+  ingress:
+    service: web
+    port: 8080
+    continuous_previews:
+      deploy_preview_when_pull_request_is_opened: true
+      delete_preview_when_pull_request_is_closed: true
+      share_to_github: true
+
+
+services:
+    web:
+        image: "${CONVOY_IMAGE}"
+        entrypoint: [ "/bin/sh" ]
+        command: /compose/start
+        volumes:
+            - ./convoy.json:/convoy.json:ro
+            # - ./compose:/compose
+        deploy:
+          resources:
+            limits:
+              memory: 1000M
+    
+
+    scheduler:
+        image: "${CONVOY_IMAGE}"
+        volumes:
+            - ./convoy.json:/convoy.json:ro
+        entrypoint: ["./cmd", "scheduler", "--config", "convoy.json"]
+        deploy:
+          resources:
+            limits:
+              memory: 1000M
+
+
+    worker:
+        image: "${CONVOY_IMAGE}"
+        volumes:
+            - ./convoy.json:/convoy.json:ro
+        entrypoint: ["./cmd", "worker", "--config", "convoy.json"]
+        deploy:
+          resources:
+            limits:
+              memory: 1000M
+    
+
+    mongo1:
+        image: mongo:latest
+        deploy:
+          resources:
+            limits:
+              memory: 500M
+        volumes:
+            - mongo_data:/data/db
+
+    redis_server:
+        image: redis:alpine
+
+
+    # typesense:
+    #     image: typesense/typesense:0.22.2
+    #     hostname: typesense
+    #     container_name: typesense
+    #     restart: always
+    #     environment:
+    #         TYPESENSE_DATA_DIR: /data/typesense
+    #         TYPESENSE_ENABLE_CORS: "true"
+    #         TYPESENSE_API_KEY: "convoy"
+    #     # volumes:
+    #     #     - ./typesense-data:/data/typesense
+    #     networks:
+    #         - backendCluster
+
+    # caddy:
+    #     image: caddy
+    #     restart: unless-stopped
+    #     ports:
+    #         - "80:80"
+    #         - "443:443"
+    #     volumes:
+    #         - ./configs/caddyfile:/etc/caddy/Caddyfile
+    #     depends_on:
+    #         - web
+    #     networks:
+    #         - backendCluster
+
+volumes:
+  mongo_data:

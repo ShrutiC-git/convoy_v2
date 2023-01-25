@@ -1,0 +1,214 @@
+<convoy-page className="pb-2">
+	<div class="flex justify-between items-center">
+		<div>
+			<h3 class="mb-2 font-semibold">Teams</h3>
+			<p class="text-grey-40 text-14 font-medium mb-24px">View and manage your team members.</p>
+		</div>
+
+		<div class="flex flex-row items-center">
+			<form class="border border-primary-400 h-36px px-14px py-0 max-w-[350px] w-full rounded-[10px] flex items-center bg-white-100">
+				<img src="/assets/img/search-icon.svg" alt="search icon" class="mr-10px" />
+				<input type="search" placeholder="Search team member" [(ngModel)]="searchString" (change)="searchTeam({ searchInput: $event })" [ngModelOptions]="{ standalone: true }" class="w-full text-grey-40 text-14 outline-none" />
+				<button convoy-button fill="clear" *ngIf="searchString && searchString.length > 0" class="transition-all duration-200 !p-0" (click)="searchTeam({ searchInput: $event })">
+					<img src="/assets/img/enter-icon.png" alt="enter icon" class="w-16px" />
+				</button>
+			</form>
+
+			<div convoy-dropdown size="sm">
+				<button dropdownTrigger convoy-button size="sm" fill="outline" color="grey" class="px-10px border border-primary-400 mx-16px min-w-[180px] whitespace-nowrap justify-between h-36px">
+					<span class="text-grey-40 text-12 mr-4px">Filter By:</span>
+					<span class="text-primary-100 text-12 capitalize">{{ selectedFilterOption }} Invites</span>
+					<img src="/assets/img/angle-arrow-down.svg" alt="arrow down icon" class="w-[16px] ml-8px" />
+				</button>
+
+				<ul dropdownOptions>
+					<li convoy-list-item convoy-dropdown-option *ngFor="let filterOption of filterOptions" [active]="selectedFilterOption == filterOption ? 'true' : 'false'">
+						<button convoy-button fill="text" class="w-full text-12 text-black !justify-start capitalize" (click)="toggleFilter(filterOption); dropdownComponent.show = false">{{ filterOption }} Invites</button>
+					</li>
+				</ul>
+			</div>
+
+			<button convoy-button size="sm" class="min-w-[150px] h-36px" (click)="openCreateTeamModal(); currentId = ''">Add team member</button>
+		</div>
+	</div>
+
+	<ng-container *ngIf="(selectedFilterOption === 'active' && isFetchingTeamMembers) || (selectedFilterOption === 'pending' && isFetchingPendingInvites)">
+		<convoy-card>
+			<convoy-table-loader [withDate]="false" [tableHead]="tableHead"></convoy-table-loader>
+		</convoy-card>
+	</ng-container>
+
+	<ng-container *ngIf="selectedFilterOption === 'active' && !isFetchingTeamMembers && !noData">
+		<convoy-card>
+			<div class="min-h-[70vh]">
+				<table convoy-table>
+					<thead convoy-table-head>
+						<th convoy-table-head-cell [ngClass]="{ 'pl-20px': i === 0 }" *ngFor="let head of tableHead; let i = index">{{ head }}</th>
+					</thead>
+					<tbody>
+						<tr convoy-table-row class="border border-primary-500" *ngFor="let team of teams?.content; let i = index" [id]="'team' + i">
+							<td convoy-table-cell class="pl-20px">
+								<convoy-badge texture="dark" [text]="team?.user_metadata?.first_name + ' ' + team?.user_metadata?.last_name"></convoy-badge>
+							</td>
+							<td convoy-table-cell>
+								{{ team.role.type === 'super_user' ? 'Super user' : team.role.type }}
+							</td>
+							<td convoy-table-cell>All projects</td>
+							<td convoy-table-cell>
+								<div convoy-dropdown size="lg">
+									<button dropdownTrigger convoy-button size="sm" fill="clear">
+										<img src="/assets/img/nav-bar-more-primary.svg" alt="more icon" />
+									</button>
+
+									<ul dropdownOptions>
+										<li>
+											<button convoy-dropdown-option convoy-button fill="clear" color="danger" class="w-full" (click)="showDeactivateModal = !showDeactivateModal; selectedMember = team; currentId = ''; showOverlay = false">Deactivate team member</button>
+										</li>
+									</ul>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</convoy-card>
+
+		<div class="flex items-center mt-16px">
+			<button convoy-button fill="outline" size="sm" class="pl-4px pr-16px py-4px border-primary-300" routerLink="./" [queryParams]="{ page: teams.pagination.prev }" [disabled]="teams.pagination.prev === 0" (click)="fetchTeamMembers({ page: teams.pagination.prev })">
+				<svg width="24" height="24" class="mr-8px fill-primary-100">
+					<use xlink:href="#arrow-left-icon"></use>
+				</svg>
+				Previous
+			</button>
+			<button
+				convoy-button
+				fill="outline"
+				size="sm"
+				class="pr-4px pl-16px py-4px border-primary-300 ml-16px"
+				routerLink="./"
+				[queryParams]="{ page: teams.pagination.next }"
+				[disabled]="teams.pagination.next === 0"
+				(click)="fetchTeamMembers({ page: teams.pagination.next })"
+			>
+				Next
+				<svg width="24" height="24" class="ml-8px fill-primary-100">
+					<use xlink:href="#arrow-right-icon"></use>
+				</svg>
+			</button>
+		</div>
+	</ng-container>
+
+	<!-- Invites -->
+	<ng-container *ngIf="selectedFilterOption === 'pending' && !isFetchingPendingInvites && !noInvitesData">
+		<convoy-card>
+			<div class="min-h-[70vh]">
+				<table convoy-table>
+					<thead convoy-table-head>
+						<th convoy-table-head-cell [ngClass]="{ 'pl-20px': i === 0 }" *ngFor="let head of tableHead; let i = index">{{ selectedFilterOption === 'pending' && head === 'Name' ? 'Email' : head }}</th>
+					</thead>
+					<tbody>
+						<tr convoy-table-row *ngFor="let team of pendingInvites?.content; let i = index" [id]="'pendingInvite' + i">
+							<td convoy-table-cell class="pl-20px">
+								{{ team.invitee_email }}
+							</td>
+							<td convoy-table-cell>{{ team.role.type === 'super_user' ? 'Super user' : team.role.type }}</td>
+							<td convoy-table-cell>All projects</td>
+							<td convoy-table-cell>
+								<div convoy-dropdown>
+									<button dropdownTrigger convoy-button size="sm" fill="clear">
+										<img src="/assets/img/nav-bar-more-primary.svg" alt="more icon" />
+									</button>
+
+									<ul dropdownOptions>
+										<li class="border-b border-b-grey-10">
+											<button convoy-dropdown-option convoy-button fill="clear" color="grey" class="w-full" (click)="resendInvite(team.uid); currentId = ''">Resend Invite</button>
+										</li>
+										<li>
+											<button convoy-dropdown-option convoy-button fill="clear" color="danger" class="w-full" (click)="showCancelInviteModal = true; selectedMember = team; showPendingInvitesDropdown = false">Cancel Invite</button>
+										</li>
+									</ul>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</convoy-card>
+
+		<div class="flex items-center mt-16px">
+			<button
+				convoy-button
+				fill="outline"
+				size="sm"
+				class="pl-4px pr-16px py-4px border-primary-300"
+				routerLink="./"
+				[queryParams]="{ pendingInvitePage: pendingInvites.pagination.prev }"
+				[disabled]="pendingInvites.pagination.prev === 0"
+				(click)="fetchPendingTeamMembers({ page: pendingInvites.pagination.prev })"
+			>
+				<svg width="24" height="24" class="mr-8px fill-primary-100">
+					<use xlink:href="#arrow-left-icon"></use>
+				</svg>
+				Previous
+			</button>
+			<button
+				convoy-button
+				fill="outline"
+				size="sm"
+				class="pr-4px pl-16px py-4px border-primary-300 ml-16px"
+				routerLink="./"
+				[queryParams]="{ pendingInvitePage: pendingInvites.pagination.next }"
+				[disabled]="pendingInvites.pagination.next === 0"
+				(click)="fetchPendingTeamMembers({ page: pendingInvites.pagination.next })"
+			>
+				Next
+				<svg width="24" height="24" class="mr-8px fill-primary-100">
+					<use xlink:href="#arrow-right-icon"></use>
+				</svg>
+			</button>
+		</div>
+	</ng-container>
+</convoy-page>
+
+<convoy-page className="pt-0" *ngIf="((selectedFilterOption === 'active' && noData) || (selectedFilterOption === 'pending' && noInvitesData)) && (!isFetchingTeamMembers || !isFetchingPendingInvites)">
+	<convoy-empty-state
+		className="h-[50vh]"
+		(onAction)="openCreateTeamModal()"
+		imgSrc="/assets/img/team-empty-img.svg"
+		[buttonText]="!searchString ? 'Add team member' : ''"
+		[heading]="searchString ? 'You have no one with the name ' + searchString + ' on your team' : selectedFilterOption === 'active' ? 'You have no one on your team yet' : 'You have no pending invites'"
+		[description]="!searchString ? 'You can invite team members to join your organization and assign them roles to projects' : ''"
+	></convoy-empty-state>
+</convoy-page>
+
+<div convoy-modal position="full" title="Add Team Member" (closeModal)="goToTeams()" *ngIf="showInviteTeamMemberModal">
+	<ng-container modalBody>
+		<form [formGroup]="inviteUserForm" (ngSubmit)="inviteUser()">
+			<convoy-card className="p-24px mt-24px">
+				<h3 class="font-semibold">Basic info</h3>
+				<div class="text-grey-40 text-14 font-normal mb-16px">Invite other members of your team to your organisation.</div>
+
+				<convoy-input-field>
+					<label for="email" convoy-label required="true">Email</label>
+					<input type="email" id="email" convoy-input autocomplete="email" formControlName="invitee_email" placeholder="Enter member email" />
+					<convoy-input-error *ngIf="inviteUserForm.get('invitee_email')?.touched && inviteUserForm.get('invitee_email')?.invalid">Please enter a valid email</convoy-input-error>
+				</convoy-input-field>
+			</convoy-card>
+			<div class="flex justify-end pt-24px pb-40px">
+				<button convoy-button fill="outline" type="button" routerLink="/team">Discard</button>
+				<button convoy-button class="ml-16px" [disabled]="invitingUser">
+					{{ invitingUser ? 'Inviting User..' : 'Send Invite' }}
+				</button>
+			</div>
+		</form>
+	</ng-container>
+</div>
+
+<app-delete-modal
+	*ngIf="showDeactivateModal || showCancelInviteModal"
+	[isLoading]="deactivatingUser || cancelingInvite"
+	[deleteText]="showCancelInviteModal ? 'cancel this invite' : 'deactivate “' + selectedMember?.user_metadata?.first_name + ' ' + selectedMember?.user_metadata?.last_name + '”'"
+	[deleteButtonText]="showCancelInviteModal ? 'Cancel Invite' : 'Deactivate'"
+	(closeModal)="showDeactivateModal = false; showCancelInviteModal = false"
+	(deleteData)="showCancelInviteModal ? cancelInvite() : deactivateMember()"
+></app-delete-modal>
